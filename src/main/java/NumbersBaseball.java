@@ -2,25 +2,33 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Random;
+import java.util.stream.IntStream;
 
 public class NumbersBaseball {
     static BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
 
     public static void main(String[] args) throws IOException {
-        while(true) {
+        boolean continueGame = true;
+
+        while(continueGame) {
             startGame();
 
             System.out.println("게임을 새로 시작하려면 1, 종료하려면 2를 입력하세요.");
             int command = stoi(br.readLine());
 
-            if(command == 2) break;
+            continueGame = isGameFinish(command);
         }
+    }
+
+    public static boolean isGameFinish(int command){
+         return command != 2;
     }
 
     public static void startGame() throws IOException {
         String[] answer = getRandomAnswer();
+        boolean continueGame = true;
 
-        while(true) {
+        while(continueGame) {
             System.out.println(answer[0] + " " + answer[1] + " " + answer[2]);
 
             System.out.print("숫자를 입력해 주세요 : ");
@@ -28,45 +36,32 @@ public class NumbersBaseball {
 
             Result result = getResult(answer, input);
 
-            if(result.isAllMiss()) {
-                System.out.println("낫싱");
-                continue;
-            }
-
-            if(result.isFinish()) {
-                System.out.println("3개의 숫자를 모두 맞히셨습니다! 게임 종료");
-                break;
-            }
-
-            if(result.getBall() > 0) {
-                System.out.print(result.getBall() + "볼 ");
-            }
-            if(result.getStrike() > 0) {
-                System.out.print(result.getStrike() + "스트라이크");
-            }
-            System.out.println("");
+            continueGame = result.writeConsole();
         }
     }
 
     public static Result getResult(String[] answer, String[] input) {
-        int strike = 0;
-        int ball = 0;
+        Result result = new Result(0, 0);
         boolean[] checked = new boolean[3];
 
         for (int i = 0; i < 3; i++) {
             String curItem = answer[i];
 
-            if (isStrike(curItem, input, checked, i)) {
-                strike += 1;
-                continue;
-            }
-
-            if (isBall(curItem, input, checked, i)) {
-                ball += 1;
-            }
+            checkStrikeBall(curItem, input, checked, i, result);
         }
 
-        return new Result(strike, ball);
+        return result;
+    }
+
+    public static void checkStrikeBall(String curItem, String[] input, boolean[] checked, int index, Result result) {
+        if (isStrike(curItem, input, checked, index)) {
+            result.strike += 1;
+            return;
+        }
+
+        if (isBall(curItem, input, checked, index)) {
+            result.ball += 1;
+        }
     }
 
     public static String[] getRandomAnswer() {
@@ -84,17 +79,25 @@ public class NumbersBaseball {
         return false;
     }
 
-    public static boolean isBall(String item, String[] input, boolean[] checked, int index) {
-        for(int i=0; i<3; i++){
-            // 스트라이크 상황 제외
-            if(i == index) continue;
+//    public static boolean isBall(String item, String[] input, boolean[] checked, int index) {
+//        for(int i=0; i<3; i++){
+//            // 스트라이크 상황 제외
+//            if(i == index) continue;
+//
+//            if(item.equals(input[i]) && !checked[i]) {
+//                checked[i] = true;
+//                return true;
+//            }
+//        }
+//        return false;
+//    }
 
-            if(item.equals(input[i]) && !checked[i]) {
-                checked[i] = true;
-                return true;
-            }
-        }
-        return false;
+    public static boolean isBall(String item, String[] input, boolean[] checked, int index) {
+        return IntStream.range(0, 3)
+                .filter(i -> i != index && item.equals(input[i]) && !checked[i])
+                .peek(i -> checked[i] = true)
+                .findFirst()
+                .isPresent();
     }
 
     public static class Result {
@@ -119,6 +122,27 @@ public class NumbersBaseball {
 
         public int getStrike() {
             return this.strike;
+        }
+
+        public boolean writeConsole() {
+            if(this.isAllMiss()) {
+                System.out.println("낫싱");
+            }
+
+            if(this.isFinish()) {
+                System.out.println("3개의 숫자를 모두 맞히셨습니다! 게임 종료");
+                return false;
+            }
+
+            if(this.getBall() > 0) {
+                System.out.println(this.getBall() + "볼 ");
+            }
+
+            if(this.getStrike() > 0) {
+                System.out.println(this.getStrike() + "스트라이크");
+            }
+
+            return true;
         }
     }
 
