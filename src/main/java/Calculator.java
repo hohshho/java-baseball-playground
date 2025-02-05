@@ -9,6 +9,12 @@ public class Calculator {
         String value = br.readLine();
         String[] values = value.split(" ");
 
+        int sum = getSum(values);
+
+        System.out.println(sum);
+    }
+
+    public static int getSum(String[] values) {
         int sum = Integer.parseInt(values[0]);
         for(int i=1; i<values.length; i+=2){
             char operator = values[i].charAt(0);
@@ -27,8 +33,7 @@ public class Calculator {
                 sum = divide(sum, num);
             }
         }
-
-        System.out.println(sum);
+        return sum;
     }
 
     public static int add(int a, int b){
